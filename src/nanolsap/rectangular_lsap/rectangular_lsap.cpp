@@ -46,6 +46,37 @@ Author: PM Larsen
 #include <algorithm>
 #include "rectangular_lsap.h"
 
+template <typename T> class matrix2d {
+public:
+    matrix2d(const T *d, intptr_t nr, intptr_t nc)
+            : m_d(d), m_nr(nr), m_nc(nc), m_transpose(false), m_negative(false) {
+    }
+    T get(intptr_t i, intptr_t j) const {
+        T r;
+        if (this->m_transpose) {
+            r = this->m_d[j * m_nc + i];
+        }
+        else {
+            r = this->m_d[i * m_nc + j];
+        }
+        if (this->m_negative) {
+            r = -r;
+        }
+        return r;
+    }
+    void transpose() {
+        this->m_transpose = !this->m_transpose;
+    }
+    void negative() {
+        this->m_negative = !this->m_negative;
+    }
+private:
+    const T *m_d;
+    intptr_t m_nr;
+    intptr_t m_nc;
+    bool m_transpose;
+    bool m_negative;
+};
 
 template <typename T> std::vector<intptr_t> argsort_iter(const std::vector<T> &v)
 {
@@ -57,13 +88,12 @@ template <typename T> std::vector<intptr_t> argsort_iter(const std::vector<T> &v
 }
 
 static intptr_t
-augmenting_path(intptr_t nc, const double *raw_cost, const std::vector<double>& u,
+augmenting_path(intptr_t nc, const matrix2d<double>& cost, const std::vector<double>& u,
                 const std::vector<double>& v, std::vector<intptr_t>& path,
                 const std::vector<intptr_t>& row4col,
                 std::vector<double>& shortestPathCosts, intptr_t i,
                 std::vector<bool>& SR, std::vector<bool>& SC,
-                std::vector<intptr_t>& remaining, double* p_minVal,
-                bool maximize, bool transpose, intptr_t raw_nc)
+                std::vector<intptr_t>& remaining, double* p_minVal)
 {
     double minVal = 0;
 
@@ -91,17 +121,7 @@ augmenting_path(intptr_t nc, const double *raw_cost, const std::vector<double>& 
         for (intptr_t it = 0; it < num_remaining; it++) {
             intptr_t j = remaining[it];
 
-            double costval;
-            if (transpose) {
-                costval = raw_cost[j * raw_nc + i];
-            }
-            else {
-                costval = raw_cost[i * nc + j];
-            }
-            if (maximize) {
-                costval = -costval;
-            }
-            double r = minVal + costval - u[i] - v[j];
+            double r = minVal + cost.get(i, j) - u[i] - v[j];
             if (r < shortestPathCosts[j]) {
                 path[j] = i;
                 shortestPathCosts[j] = r;
@@ -148,17 +168,21 @@ solve(intptr_t nr, intptr_t nc, const double* cost, bool maximize,
 
     // test for NaN and -inf entries
     for (intptr_t i = 0; i < nr * nc; i++) {
-        if (cost[i] != cost[i] || ((cost[i] == -INFINITY) && !maximize) || ((-cost[i] == -INFINITY) && maximize)) {
+        if (cost[i] != cost[i] || ((cost[i] == -INFINITY) && !maximize) || ((cost[i] == INFINITY) && maximize)) {
             return RECTANGULAR_LSAP_INVALID;
         }
     }
 
     // tall rectangular cost matrix must be transposed
     bool transpose = nc < nr;
-    intptr_t raw_nc = nc;
+    matrix2d costmat{cost, nr, nc};
 
     if (transpose) {
+        costmat.transpose();
         std::swap(nr, nc);
+    }
+    if (maximize) {
+        costmat.negative();
     }
 
     // initialize variables
@@ -176,10 +200,9 @@ solve(intptr_t nr, intptr_t nc, const double* cost, bool maximize,
     for (intptr_t curRow = 0; curRow < nr; curRow++) {
 
         double minVal;
-        intptr_t sink = augmenting_path(nc, cost, u, v, path, row4col,
+        intptr_t sink = augmenting_path(nc, costmat, u, v, path, row4col,
                                         shortestPathCosts, curRow, SR, SC,
-                                        remaining, &minVal,
-                                        maximize, transpose, raw_nc);
+                                        remaining, &minVal);
         if (sink < 0) {
             return RECTANGULAR_LSAP_INFEASIBLE;
         }
