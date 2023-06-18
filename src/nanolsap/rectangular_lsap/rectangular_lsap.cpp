@@ -49,16 +49,22 @@ Author: PM Larsen
 template <typename T> class matrix2d {
 public:
     matrix2d(const T *d, intptr_t nr, intptr_t nc)
-            : m_d(d), m_nr(nr), m_nc(nc), m_transpose(false), m_negative(false) {
+            : m_d(d), m_nr(nr), m_nc(nc),
+            m_transpose(false), m_negative(false),
+            m_subrows(nullptr), m_subcols(nullptr)  {
     }
     T get(intptr_t i, intptr_t j) const {
         T r;
         if (this->m_transpose) {
-            r = this->m_d[j * m_nc + i];
+            std::swap(i, j);
         }
-        else {
-            r = this->m_d[i * m_nc + j];
+        if (this->m_subrows != nullptr) {
+            i = this->m_subrows[i];
         }
+        if (this->m_subcols != nullptr) {
+            j = this->m_subcols[j];
+        }
+        r = this->m_d[i * m_nc + j];
         if (this->m_negative) {
             r = -r;
         }
@@ -70,12 +76,18 @@ public:
     void negative() {
         this->m_negative = !this->m_negative;
     }
+    void subscript(const intptr_t *subrows, const intptr_t *subcols) {
+        this->m_subrows = subrows;
+        this->m_subcols = subcols;
+    }
 private:
     const T *m_d;
     intptr_t m_nr;
     intptr_t m_nc;
     bool m_transpose;
     bool m_negative;
+    const intptr_t *m_subrows;
+    const intptr_t *m_subcols;
 };
 
 template <typename T> std::vector<intptr_t> argsort_iter(const std::vector<T> &v)
@@ -159,6 +171,7 @@ augmenting_path(intptr_t nc, const matrix2d<double>& cost, const std::vector<dou
 
 static int
 solve(intptr_t nr, intptr_t nc, const double* cost, bool maximize,
+      const intptr_t *subrows, intptr_t n_subrows, const intptr_t *subcols, intptr_t n_subcols,
       int64_t* a, int64_t* b)
 {
     // handle trivial inputs
@@ -173,10 +186,48 @@ solve(intptr_t nr, intptr_t nc, const double* cost, bool maximize,
         }
     }
 
-    // tall rectangular cost matrix must be transposed
-    bool transpose = nc < nr;
+    // check subrows and subcols in bound.
+    if (n_subrows == 0) {
+        subrows = nullptr;
+    }
+    else {
+        // notice n_subrows larger than nr is legal, same for n_subcols and nc
+        if (n_subrows < 0) {
+            return RECTANGULAR_LSAP_SUBSCRIPT_OUTBOUND;
+        }
+        for (intptr_t i = 0; i < n_subrows; i++) {
+            intptr_t v = subrows[i];
+            if (v < 0 || v >= nr) {
+                return RECTANGULAR_LSAP_SUBSCRIPT_OUTBOUND;
+            }
+        }
+    }
+    if (n_subcols == 0) {
+        subcols = nullptr;
+    }
+    else {
+        if (n_subcols < 0) {
+            return RECTANGULAR_LSAP_SUBSCRIPT_OUTBOUND;
+        }
+        for (intptr_t j = 0; j < n_subcols; j++) {
+            intptr_t v = subcols[j];
+            if (v < 0 || v >= nc) {
+                return RECTANGULAR_LSAP_SUBSCRIPT_OUTBOUND;
+            }
+        }
+    }
+
     matrix2d costmat{cost, nr, nc};
 
+    bool subscript = (subrows != nullptr) || (subcols != nullptr);
+    if (subscript) {
+        costmat.subscript(subrows, subcols);
+        nr = n_subrows;
+        nc = n_subcols;
+    }
+
+    // tall rectangular cost matrix must be transposed
+    bool transpose = nc < nr;
     if (transpose) {
         costmat.transpose();
         std::swap(nr, nc);
@@ -248,6 +299,17 @@ solve(intptr_t nr, intptr_t nc, const double* cost, bool maximize,
         }
     }
 
+    if (subscript) {
+        for (intptr_t i = 0; i < nr; i++) {
+            if (subrows != nullptr) {
+                a[i] = subrows[a[i]];
+            }
+            if (subcols != nullptr) {
+                b[i] = subcols[b[i]];
+            }
+        }
+    }
+
     return 0;
 }
 
@@ -260,7 +322,7 @@ solve_rectangular_linear_sum_assignment(intptr_t nr, intptr_t nc,
                                         double* input_cost, bool maximize,
                                         int64_t* a, int64_t* b)
 {
-    return solve(nr, nc, input_cost, maximize, a, b);
+    return solve(nr, nc, input_cost, maximize, nullptr, 0, nullptr, 0, a, b);
 }
 
 #ifdef __cplusplus
