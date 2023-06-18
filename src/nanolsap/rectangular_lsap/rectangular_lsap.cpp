@@ -99,8 +99,8 @@ template <typename T> std::vector<intptr_t> argsort_iter(const std::vector<T> &v
     return index;
 }
 
-static intptr_t
-augmenting_path(intptr_t nc, const matrix2d<double>& cost, const std::vector<double>& u,
+template <typename T> static intptr_t
+augmenting_path(intptr_t nc, const matrix2d<T>& cost, const std::vector<double>& u,
                 const std::vector<double>& v, std::vector<intptr_t>& path,
                 const std::vector<intptr_t>& row4col,
                 std::vector<double>& shortestPathCosts, intptr_t i,
@@ -169,8 +169,8 @@ augmenting_path(intptr_t nc, const matrix2d<double>& cost, const std::vector<dou
     return sink;
 }
 
-static int
-solve(intptr_t nr, intptr_t nc, const double* cost, bool maximize,
+template <typename T> static int
+solve(intptr_t nr, intptr_t nc, const T* cost, bool maximize,
       const intptr_t *subrows, intptr_t n_subrows, const intptr_t *subcols, intptr_t n_subcols,
       int64_t* a, int64_t* b)
 {
@@ -326,13 +326,44 @@ solve_rectangular_linear_sum_assignment(intptr_t nr, intptr_t nc,
 }
 
 
-int solve_rectangular_linear_sum_assignment_float64(
-    intptr_t nr, intptr_t nc, double* input_cost, bool maximize,
+int solve_rectangular_linear_sum_assignment_dtype(
+    intptr_t nr, intptr_t nc, void* input_cost, intptr_t dtype, bool maximize,
     const intptr_t *subrows, intptr_t n_subrows, const intptr_t *subcols, intptr_t n_subcols,
-    int64_t* a, int64_t* b) {
-    return solve(nr, nc, input_cost, maximize, subrows, n_subrows, subcols, n_subcols, a, b);
+    int64_t* a, int64_t* b)
+{
+    switch (dtype) {
+    case LSAP_BOOL:
+        return solve(nr, nc, (bool *)input_cost, maximize, subrows, n_subrows, subcols, n_subcols, a, b);
+    case LSAP_BYTE:
+        return solve(nr, nc, (char *)input_cost, maximize, subrows, n_subrows, subcols, n_subcols, a, b);
+    case LSAP_UBYTE:
+        return solve(nr, nc, (unsigned char *)input_cost, maximize, subrows, n_subrows, subcols, n_subcols, a, b);
+    case LSAP_SHORT:
+        return solve(nr, nc, (short *)input_cost, maximize, subrows, n_subrows, subcols, n_subcols, a, b);
+    case LSAP_USHORT:
+        return solve(nr, nc, (unsigned short *)input_cost, maximize, subrows, n_subrows, subcols, n_subcols, a, b);
+    case LSAP_INT:
+        return solve(nr, nc, (int *)input_cost, maximize, subrows, n_subrows, subcols, n_subcols, a, b);
+    case LSAP_UINT:
+        return solve(nr, nc, (unsigned int *)input_cost, maximize, subrows, n_subrows, subcols, n_subcols, a, b);
+    case LSAP_LONG:
+        return solve(nr, nc, (long *)input_cost, maximize, subrows, n_subrows, subcols, n_subcols, a, b);
+    case LSAP_ULONG:
+        return solve(nr, nc, (unsigned long *)input_cost, maximize, subrows, n_subrows, subcols, n_subcols, a, b);
+    case LSAP_LONGLONG:
+        return solve(nr, nc, (long long *)input_cost, maximize, subrows, n_subrows, subcols, n_subcols, a, b);
+    case LSAP_ULONGLONG:
+        return solve(nr, nc, (unsigned long long *)input_cost, maximize, subrows, n_subrows, subcols, n_subcols, a, b);
+    case LSAP_FLOAT:
+        return solve(nr, nc, (float *)input_cost, maximize, subrows, n_subrows, subcols, n_subcols, a, b);
+    case LSAP_DOUBLE:
+        return solve(nr, nc, (double *)input_cost, maximize, subrows, n_subrows, subcols, n_subcols, a, b);
+    case LSAP_LONGDOUBLE:
+        return solve(nr, nc, (long double *)input_cost, maximize, subrows, n_subrows, subcols, n_subcols, a, b);
+    default:
+        return RECTANGULAR_LSAP_DTYPE_INVALID;
+    }
 }
-
 
 #ifdef __cplusplus
 }

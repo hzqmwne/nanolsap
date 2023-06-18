@@ -34,6 +34,41 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rectangular_lsap/rectangular_lsap.h"
 
 
+static intptr_t convert_npy_typ_to_lsap_typ(intptr_t npy_typ) {
+    switch (npy_typ) {
+    case NPY_BOOL:
+        return LSAP_BOOL;
+    case NPY_BYTE:
+        return LSAP_BYTE;
+    case NPY_UBYTE:
+        return LSAP_UBYTE;
+    case NPY_SHORT:
+        return LSAP_SHORT;
+    case NPY_USHORT:
+        return LSAP_USHORT;
+    case NPY_INT:
+        return LSAP_INT;
+    case NPY_UINT:
+        return LSAP_UINT;
+    case NPY_LONG:
+        return LSAP_LONG;
+    case NPY_ULONG:
+        return LSAP_ULONG;
+    case NPY_LONGLONG:
+        return LSAP_LONGLONG;
+    case NPY_ULONGLONG:
+        return LSAP_ULONGLONG;
+    case NPY_FLOAT:
+        return LSAP_FLOAT;
+    case NPY_DOUBLE:
+        return LSAP_DOUBLE;
+    case NPY_LONGDOUBLE:
+        return LSAP_LONGDOUBLE;
+    default:
+        return LSAP_INVALID;
+    }
+}
+
 static PyObject*
 linear_sum_assignment(PyObject* self, PyObject* args, PyObject* kwargs)
 {
@@ -41,6 +76,7 @@ linear_sum_assignment(PyObject* self, PyObject* args, PyObject* kwargs)
     PyObject* b = NULL;
     PyObject* result = NULL;
     PyObject* obj_cost = NULL;
+    PyArrayObject* obj_cont = NULL;
     int maximize = 0;
     PyObject* obj_subrows = NULL;
     PyObject* obj_subcols = NULL;
@@ -56,11 +92,22 @@ linear_sum_assignment(PyObject* self, PyObject* args, PyObject* kwargs)
                                     (const char*)"subcols",
                                     NULL};
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|pOO", (char**)kwlist,
-                                     &obj_cost, &maximize, &obj_subrows, &obj_subcols))
+                                     &obj_cost, &maximize, &obj_subrows, &obj_subcols)) {
         return NULL;
+    }
 
-    PyArrayObject* obj_cont =
-      (PyArrayObject*)PyArray_ContiguousFromAny(obj_cost, NPY_DOUBLE, 0, 0);
+    intptr_t npy_typ = NPY_DOUBLE;
+    intptr_t dtype = LSAP_DOUBLE;
+    if (PyArray_Check(obj_cost)) {
+        intptr_t tmp_npy_typ = PyArray_TYPE((PyArrayObject*)obj_cost);
+        intptr_t tmp_dtype = convert_npy_typ_to_lsap_typ(tmp_npy_typ);
+        if (tmp_dtype != LSAP_INVALID) {
+            npy_typ = tmp_npy_typ;
+            dtype = tmp_dtype;
+        }
+    }
+
+    obj_cont = (PyArrayObject*)PyArray_ContiguousFromAny(obj_cost, npy_typ, 0, 0);
     if (!obj_cont) {
         return NULL;
     }
@@ -72,7 +119,7 @@ linear_sum_assignment(PyObject* self, PyObject* args, PyObject* kwargs)
         goto cleanup;
     }
 
-    double* cost_matrix = (double*)PyArray_DATA(obj_cont);
+    void* cost_matrix = PyArray_DATA(obj_cont);
     if (cost_matrix == NULL) {
         PyErr_SetString(PyExc_TypeError, "invalid cost matrix object");
         goto cleanup;
@@ -128,8 +175,8 @@ linear_sum_assignment(PyObject* self, PyObject* args, PyObject* kwargs)
     if (!b)
         goto cleanup;
 
-    int ret = solve_rectangular_linear_sum_assignment_float64(
-      num_rows, num_cols, cost_matrix, maximize,
+    int ret = solve_rectangular_linear_sum_assignment_dtype(
+      num_rows, num_cols, cost_matrix, dtype, maximize,
       subrows, n_subrows, subcols, n_subcols,
       PyArray_DATA((PyArrayObject*)a),
       PyArray_DATA((PyArrayObject*)b));
