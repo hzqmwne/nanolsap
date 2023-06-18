@@ -57,12 +57,13 @@ template <typename T> std::vector<intptr_t> argsort_iter(const std::vector<T> &v
 }
 
 static intptr_t
-augmenting_path(intptr_t nc, const double *cost, const std::vector<double>& u,
+augmenting_path(intptr_t nc, const double *raw_cost, const std::vector<double>& u,
                 const std::vector<double>& v, std::vector<intptr_t>& path,
                 const std::vector<intptr_t>& row4col,
                 std::vector<double>& shortestPathCosts, intptr_t i,
                 std::vector<bool>& SR, std::vector<bool>& SC,
-                std::vector<intptr_t>& remaining, double* p_minVal)
+                std::vector<intptr_t>& remaining, double* p_minVal,
+                bool maximize, bool transpose, intptr_t raw_nc)
 {
     double minVal = 0;
 
@@ -90,7 +91,17 @@ augmenting_path(intptr_t nc, const double *cost, const std::vector<double>& u,
         for (intptr_t it = 0; it < num_remaining; it++) {
             intptr_t j = remaining[it];
 
-            double r = minVal + cost[i * nc + j] - u[i] - v[j];
+            double costval;
+            if (transpose) {
+                costval = raw_cost[j * raw_nc + i];
+            }
+            else {
+                costval = raw_cost[i * nc + j];
+            }
+            if (maximize) {
+                costval = -costval;
+            }
+            double r = minVal + costval - u[i] - v[j];
             if (r < shortestPathCosts[j]) {
                 path[j] = i;
                 shortestPathCosts[j] = r;
@@ -127,7 +138,7 @@ augmenting_path(intptr_t nc, const double *cost, const std::vector<double>& u,
 }
 
 static int
-solve(intptr_t nr, intptr_t nc, double* cost, bool maximize,
+solve(intptr_t nr, intptr_t nc, const double* cost, bool maximize,
       int64_t* a, int64_t* b)
 {
     // handle trivial inputs
@@ -135,42 +146,19 @@ solve(intptr_t nr, intptr_t nc, double* cost, bool maximize,
         return 0;
     }
 
-    // tall rectangular cost matrix must be transposed
-    bool transpose = nc < nr;
-
-    // make a copy of the cost matrix if we need to modify it
-    std::vector<double> temp;
-    if (transpose || maximize) {
-        temp.resize(nr * nc);
-
-        if (transpose) {
-            for (intptr_t i = 0; i < nr; i++) {
-                for (intptr_t j = 0; j < nc; j++) {
-                    temp[j * nr + i] = cost[i * nc + j];
-                }
-            }
-
-            std::swap(nr, nc);
-        }
-        else {
-            std::copy(cost, cost + nr * nc, temp.begin());
-        }
-
-        // negate cost matrix for maximization
-        if (maximize) {
-            for (intptr_t i = 0; i < nr * nc; i++) {
-                temp[i] = -temp[i];
-            }
-        }
-
-        cost = temp.data();
-    }
-
     // test for NaN and -inf entries
     for (intptr_t i = 0; i < nr * nc; i++) {
-        if (cost[i] != cost[i] || cost[i] == -INFINITY) {
+        if (cost[i] != cost[i] || ((cost[i] == -INFINITY) && !maximize) || ((-cost[i] == -INFINITY) && maximize)) {
             return RECTANGULAR_LSAP_INVALID;
         }
+    }
+
+    // tall rectangular cost matrix must be transposed
+    bool transpose = nc < nr;
+    intptr_t raw_nc = nc;
+
+    if (transpose) {
+        std::swap(nr, nc);
     }
 
     // initialize variables
@@ -190,7 +178,8 @@ solve(intptr_t nr, intptr_t nc, double* cost, bool maximize,
         double minVal;
         intptr_t sink = augmenting_path(nc, cost, u, v, path, row4col,
                                         shortestPathCosts, curRow, SR, SC,
-                                        remaining, &minVal);
+                                        remaining, &minVal,
+                                        maximize, transpose, raw_nc);
         if (sink < 0) {
             return RECTANGULAR_LSAP_INFEASIBLE;
         }
