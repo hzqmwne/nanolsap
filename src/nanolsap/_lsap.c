@@ -42,11 +42,21 @@ linear_sum_assignment(PyObject* self, PyObject* args, PyObject* kwargs)
     PyObject* result = NULL;
     PyObject* obj_cost = NULL;
     int maximize = 0;
+    PyObject* obj_subrows = NULL;
+    PyObject* obj_subcols = NULL;
+    PyArrayObject* array_subrows = NULL;
+    PyArrayObject* array_subcols = NULL;
+    intptr_t *subrows = NULL;
+    intptr_t n_subrows = 0;
+    intptr_t *subcols = NULL;
+    intptr_t n_subcols = 0;
 	static const char *kwlist[] = {	(const char*)"cost_matrix",
                                     (const char*)"maximize",
+                                    (const char*)"subrows",
+                                    (const char*)"subcols",
                                     NULL};
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|p", (char**)kwlist,
-                                     &obj_cost, &maximize))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|pOO", (char**)kwlist,
+                                     &obj_cost, &maximize, &obj_subrows, &obj_subcols))
         return NULL;
 
     PyArrayObject* obj_cont =
@@ -68,9 +78,48 @@ linear_sum_assignment(PyObject* self, PyObject* args, PyObject* kwargs)
         goto cleanup;
     }
 
+    if (obj_subrows != NULL && obj_subrows != Py_None) {
+        array_subrows = (PyArrayObject*)PyArray_ContiguousFromAny(obj_subrows, NPY_INTP, 0, 0);
+        if (!array_subrows) {
+            return NULL;
+        }
+        if (PyArray_NDIM(array_subrows) != 1) {
+            PyErr_Format(PyExc_ValueError,
+                        "subrows expected a 1-D array, got a %d array",
+                        PyArray_NDIM(array_subrows));
+            goto cleanup;
+        }
+        subrows = (intptr_t *)PyArray_DATA(array_subrows);
+        if (subrows == NULL) {
+            PyErr_SetString(PyExc_TypeError, "invalid subrows array object");
+            goto cleanup;
+        }
+        n_subrows = PyArray_DIM(array_subrows, 0);
+    }
+    if (obj_subcols != NULL && obj_subrows != Py_None) {
+        array_subcols = (PyArrayObject*)PyArray_ContiguousFromAny(obj_subcols, NPY_INTP, 0, 0);
+        if (!array_subcols) {
+            return NULL;
+        }
+        if (PyArray_NDIM(array_subcols) != 1) {
+            PyErr_Format(PyExc_ValueError,
+                        "subcols expected a 1-D array, got a %d array",
+                        PyArray_NDIM(array_subcols));
+            goto cleanup;
+        }
+        subcols = (intptr_t *)PyArray_DATA(array_subcols);
+        if (subcols == NULL) {
+            PyErr_SetString(PyExc_TypeError, "invalid subrows array object");
+            goto cleanup;
+        }
+        n_subcols = PyArray_DIM(array_subcols, 0);
+    }
+
     npy_intp num_rows = PyArray_DIM(obj_cont, 0);
     npy_intp num_cols = PyArray_DIM(obj_cont, 1);
-    npy_intp dim[1] = { num_rows < num_cols ? num_rows : num_cols };
+    npy_intp dim_num_rows = n_subrows ? n_subrows : num_rows;
+    npy_intp dim_num_cols = n_subcols ? n_subcols : num_cols;
+    npy_intp dim[1] = { num_rows < dim_num_cols ? dim_num_rows : dim_num_cols };
     a = PyArray_SimpleNew(1, dim, NPY_INT64);
     if (!a)
         goto cleanup;
@@ -79,8 +128,9 @@ linear_sum_assignment(PyObject* self, PyObject* args, PyObject* kwargs)
     if (!b)
         goto cleanup;
 
-    int ret = solve_rectangular_linear_sum_assignment(
+    int ret = solve_rectangular_linear_sum_assignment_float64(
       num_rows, num_cols, cost_matrix, maximize,
+      subrows, n_subrows, subcols, n_subcols,
       PyArray_DATA((PyArrayObject*)a),
       PyArray_DATA((PyArrayObject*)b));
     if (ret == RECTANGULAR_LSAP_INFEASIBLE) {
@@ -92,10 +142,17 @@ linear_sum_assignment(PyObject* self, PyObject* args, PyObject* kwargs)
                         "matrix contains invalid numeric entries");
         goto cleanup;
     }
+    else if (ret == RECTANGULAR_LSAP_SUBSCRIPT_INVALID) {
+        PyErr_SetString(PyExc_ValueError,
+                        "subrows or subcols is invalid");
+        goto cleanup;
+    }
 
     result = Py_BuildValue("OO", a, b);
 
 cleanup:
+    Py_XDECREF((PyObject*)array_subcols);
+    Py_XDECREF((PyObject*)array_subrows);
     Py_XDECREF((PyObject*)obj_cont);
     Py_XDECREF(a);
     Py_XDECREF(b);
@@ -115,6 +172,12 @@ static PyMethodDef lsap_methods[] = {
 "\n"
 "maximize : bool (default: False)\n"
 "    Calculates a maximum weight matching if true.\n"
+"\n"
+"subrows : array (default: None)\n"
+"    Use sub rows from cost matrix if not None.\n"
+"\n"
+"subcols : array (default: None)\n"
+"    Use sub cols from cost matrix if not None.\n"
 "\n"
 "Returns\n"
 "-------\n"

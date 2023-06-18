@@ -193,12 +193,12 @@ solve(intptr_t nr, intptr_t nc, const double* cost, bool maximize,
     else {
         // notice n_subrows larger than nr is legal, same for n_subcols and nc
         if (n_subrows < 0) {
-            return RECTANGULAR_LSAP_SUBSCRIPT_OUTBOUND;
+            return RECTANGULAR_LSAP_SUBSCRIPT_INVALID;
         }
         for (intptr_t i = 0; i < n_subrows; i++) {
             intptr_t v = subrows[i];
             if (v < 0 || v >= nr) {
-                return RECTANGULAR_LSAP_SUBSCRIPT_OUTBOUND;
+                return RECTANGULAR_LSAP_SUBSCRIPT_INVALID;
             }
         }
     }
@@ -207,12 +207,12 @@ solve(intptr_t nr, intptr_t nc, const double* cost, bool maximize,
     }
     else {
         if (n_subcols < 0) {
-            return RECTANGULAR_LSAP_SUBSCRIPT_OUTBOUND;
+            return RECTANGULAR_LSAP_SUBSCRIPT_INVALID;
         }
         for (intptr_t j = 0; j < n_subcols; j++) {
             intptr_t v = subcols[j];
             if (v < 0 || v >= nc) {
-                return RECTANGULAR_LSAP_SUBSCRIPT_OUTBOUND;
+                return RECTANGULAR_LSAP_SUBSCRIPT_INVALID;
             }
         }
     }
@@ -324,6 +324,15 @@ solve_rectangular_linear_sum_assignment(intptr_t nr, intptr_t nc,
 {
     return solve(nr, nc, input_cost, maximize, nullptr, 0, nullptr, 0, a, b);
 }
+
+
+int solve_rectangular_linear_sum_assignment_float64(
+    intptr_t nr, intptr_t nc, double* input_cost, bool maximize,
+    const intptr_t *subrows, intptr_t n_subrows, const intptr_t *subcols, intptr_t n_subcols,
+    int64_t* a, int64_t* b) {
+    return solve(nr, nc, input_cost, maximize, subrows, n_subrows, subcols, n_subcols, a, b);
+}
+
 
 #ifdef __cplusplus
 }

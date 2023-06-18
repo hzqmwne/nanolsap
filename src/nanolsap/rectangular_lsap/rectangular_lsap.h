@@ -33,7 +33,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define RECTANGULAR_LSAP_INFEASIBLE -1
 #define RECTANGULAR_LSAP_INVALID -2
-#define RECTANGULAR_LSAP_SUBSCRIPT_OUTBOUND -3
+#define RECTANGULAR_LSAP_SUBSCRIPT_INVALID -3
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,6 +45,16 @@ extern "C" {
 int solve_rectangular_linear_sum_assignment(intptr_t nr, intptr_t nc,
                                             double* input_cost, bool maximize,
                                             int64_t* a, int64_t* b);
+
+int solve_rectangular_linear_sum_assignment_dtype(
+    intptr_t nr, intptr_t nc, void* input_cost, intptr_t dtype, bool maximize,
+    const intptr_t *subrows, intptr_t n_subrows, const intptr_t *subcols, intptr_t n_subcols,
+    int64_t* a, int64_t* b);
+
+int solve_rectangular_linear_sum_assignment_float64(
+    intptr_t nr, intptr_t nc, double* input_cost, bool maximize,
+    const intptr_t *subrows, intptr_t n_subrows, const intptr_t *subcols, intptr_t n_subcols,
+    int64_t* a, int64_t* b);
 
 #ifdef __cplusplus
 }
