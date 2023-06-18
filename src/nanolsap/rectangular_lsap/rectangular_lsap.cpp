@@ -57,9 +57,9 @@ template <typename T> std::vector<intptr_t> argsort_iter(const std::vector<T> &v
 }
 
 static intptr_t
-augmenting_path(intptr_t nc, double *cost, std::vector<double>& u,
-                std::vector<double>& v, std::vector<intptr_t>& path,
-                std::vector<intptr_t>& row4col,
+augmenting_path(intptr_t nc, const double *cost, const std::vector<double>& u,
+                const std::vector<double>& v, std::vector<intptr_t>& path,
+                const std::vector<intptr_t>& row4col,
                 std::vector<double>& shortestPathCosts, intptr_t i,
                 std::vector<bool>& SR, std::vector<bool>& SC,
                 std::vector<intptr_t>& remaining, double* p_minVal)
