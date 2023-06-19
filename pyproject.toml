@@ -27,6 +27,9 @@ dynamic = ["version"]
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+nanolsap = ["py.typed"]
+
 [tool.setuptools_scm]
 
 [tool.cibuildwheel]
