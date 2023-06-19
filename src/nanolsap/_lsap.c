@@ -143,7 +143,7 @@ linear_sum_assignment(PyObject* self, PyObject* args, PyObject* kwargs)
         }
         n_subrows = PyArray_DIM(array_subrows, 0);
     }
-    if (obj_subcols != NULL && obj_subrows != Py_None) {
+    if (obj_subcols != NULL && obj_subcols != Py_None) {
         array_subcols = (PyArrayObject*)PyArray_ContiguousFromAny(obj_subcols, NPY_INTP, 0, 0);
         if (!array_subcols) {
             return NULL;
@@ -156,7 +156,7 @@ linear_sum_assignment(PyObject* self, PyObject* args, PyObject* kwargs)
         }
         subcols = (intptr_t *)PyArray_DATA(array_subcols);
         if (subcols == NULL) {
-            PyErr_SetString(PyExc_TypeError, "invalid subrows array object");
+            PyErr_SetString(PyExc_TypeError, "invalid subcols array object");
             goto cleanup;
         }
         n_subcols = PyArray_DIM(array_subcols, 0);
