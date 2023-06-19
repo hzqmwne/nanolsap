@@ -31,7 +31,8 @@ row_ind, col_ind : array
     An array of row indices and one of corresponding column indices giving
     the optimal assignment. The cost of the assignment can be computed
     as ``cost_matrix[row_ind, col_ind].sum()``. The row indices will be
-    sorted if subrows and subcols are both None; in the case of a square cost matrix they will be equal to ``numpy.arange(cost_matrix.shape[0])``.
+    sorted if subrows and subcols are both None; in the case of a square cost
+    matrix they will be equal to ``numpy.arange(cost_matrix.shape[0])``.
 ```
 
 This module is useful in cases when you need an efficient LSAP solver on 
@@ -45,10 +46,10 @@ the  first step here will cause one extra copy, increases the actual memory cost
 
 In this module, When input cost_matrix is a contiguous numpy 2-D array, the solver can run on it directly without any copy. 
 Also, cost_matrix can use small dtype like float32 to half reduce memory, so 3.35GB memory is enough. 
-It may sacrifice a little performance, but it is worth for the huge saving of memory. 
+It may sacrifice a little performance, but it is worth for the huge saving of memory.
 
 The subrows and subcols arguments allow solver run on only a subgroup of row and cols on cost_matrix. 
-The result should be same as scipy.optimize.linear_sum_assignment(cost_matrix)[np.ix_(subrows, subcols)], but it avoids the expensive construct of sub cost_matrix. 
+The result should be same as scipy.optimize.linear_sum_assignment(cost_matrix[np.ix_(subrows, subcols)]), but it avoids the expensive construct of sub cost_matrix.
 
 ## License
 

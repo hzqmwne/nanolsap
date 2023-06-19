@@ -86,7 +86,7 @@ linear_sum_assignment(PyObject* self, PyObject* args, PyObject* kwargs)
     intptr_t n_subrows = 0;
     intptr_t *subcols = NULL;
     intptr_t n_subcols = 0;
-	static const char *kwlist[] = {	(const char*)"cost_matrix",
+    static const char *kwlist[] = { (const char*)"cost_matrix",
                                     (const char*)"maximize",
                                     (const char*)"subrows",
                                     (const char*)"subcols",
