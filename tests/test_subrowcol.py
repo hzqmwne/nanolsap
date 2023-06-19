@@ -3,7 +3,16 @@ from nanolsap import linear_sum_assignment as solve
 from scipy.optimize import linear_sum_assignment as scipy_linear_sum_assignment
 
 
-def test_subrow_subcol():
+def test_simple():
+    dense = [[1, 0, 2, 1], [0, 0, 0, 0], [1, 0, 1, 2]]
+    subrows = [0, 2]
+    subcols = [0, 2, 3]
+    row_ind, col_ind = solve(dense, True, subrows, subcols)
+    assert row_ind.tolist() == [0, 2]
+    assert col_ind.tolist() == [2, 3]
+
+
+def test_subrow_subcol_random():
     np.random.seed(1234)
     for i in range(100):
         row_size = np.random.randint(51, 100)

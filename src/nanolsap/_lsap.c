@@ -166,7 +166,7 @@ linear_sum_assignment(PyObject* self, PyObject* args, PyObject* kwargs)
     npy_intp num_cols = PyArray_DIM(obj_cont, 1);
     npy_intp dim_num_rows = n_subrows ? n_subrows : num_rows;
     npy_intp dim_num_cols = n_subcols ? n_subcols : num_cols;
-    npy_intp dim[1] = { num_rows < dim_num_cols ? dim_num_rows : dim_num_cols };
+    npy_intp dim[1] = { dim_num_rows < dim_num_cols ? dim_num_rows : dim_num_cols };
     a = PyArray_SimpleNew(1, dim, NPY_INT64);
     if (!a)
         goto cleanup;
