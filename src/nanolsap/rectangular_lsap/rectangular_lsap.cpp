@@ -53,8 +53,8 @@ public:
             m_transpose(false), m_negative(false),
             m_subrows(nullptr), m_subcols(nullptr)  {
     }
-    T get(intptr_t i, intptr_t j) const {    // TODO: always return double
-        T r;
+    double get(intptr_t i, intptr_t j) const {
+        double r;
         if (this->m_transpose) {
             std::swap(i, j);
         }
