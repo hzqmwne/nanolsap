@@ -217,7 +217,7 @@ solve(intptr_t nr, intptr_t nc, const T* cost, bool maximize,
         }
     }
 
-    matrix2d costmat{cost, nr, nc};
+    matrix2d<T> costmat{cost, nr, nc};
 
     bool subscript = (subrows != nullptr) || (subcols != nullptr);
     if (subscript) {
