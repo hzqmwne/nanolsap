@@ -8,11 +8,15 @@ import numpy as np
 
 from nanolsap import linear_sum_assignment
 from scipy.sparse import random
-from scipy.sparse._sputils import matrix
+# from scipy.sparse._sputils import matrix
 from scipy.sparse.csgraph import min_weight_full_bipartite_matching
 from scipy.sparse.csgraph.tests.test_matching import (
     linear_sum_assignment_assertions, linear_sum_assignment_test_cases
 )
+
+
+def matrix(*args, **kwargs):
+    return np.array(*args, **kwargs).view(np.matrix)
 
 
 def test_linear_sum_assignment_input_shape():
