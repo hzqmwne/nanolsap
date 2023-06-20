@@ -15,6 +15,7 @@ Parameters
 ----------
 cost_matrix : array
     The cost matrix of the bipartite graph.
+    It should be 2-D ArrayLike object, with nr rows and nc cols.
 
 maximize : bool (default: False)
     Calculates a maximum weight matching if true.
@@ -46,7 +47,12 @@ the  first step here will cause one extra copy, increases the actual memory cost
 
 In this module, When input cost_matrix is a contiguous numpy 2-D array, the solver can run on it directly without any copy. 
 Also, cost_matrix can use small dtype like float32 to half reduce memory, so 3.35GB memory is enough. 
-It may sacrifice a little performance, but it is worth for the huge saving of memory.
+
+Notice: when nr > nc, scipy.optimize.linear_sum_assignment will copy then transpose and rearrange cost matrix so keeps memory access locality,
+but this module do not do this, so it is about 2x slower in this situation. 
+For nr <= nc, this module has almost no performance drop, 
+so you can manually construct a transposed cost matrix for this module, 
+and manually swap row_ind and col_ind result if nr > nc to get better performance. 
 
 The subrows and subcols arguments allow solver run on only a subgroup of row and cols on cost_matrix. 
 The result should be same as scipy.optimize.linear_sum_assignment(cost_matrix[np.ix_(subrows, subcols)]), but it avoids the expensive construct of sub cost_matrix.
