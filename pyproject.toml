@@ -35,7 +35,7 @@ nanolsap = ["py.typed"]
 [tool.cibuildwheel]
 build = "cp37-*"
 skip = "*-musllinux*"
-test-requires = "pytest"
+test-requires = ["pytest", "scipy"]
 test-command = "pytest {project}/tests"
 
 [tool.cibuildwheel.macos]
