@@ -78,8 +78,8 @@ linear_sum_assignment(PyObject* self, PyObject* args, PyObject* kwargs)
     PyObject* obj_cost = NULL;
     PyArrayObject* obj_cont = NULL;
     int maximize = 0;
-    PyObject* obj_subrows = NULL;
-    PyObject* obj_subcols = NULL;
+    PyObject* obj_subrows = Py_None;
+    PyObject* obj_subcols = Py_None;
     PyArrayObject* array_subrows = NULL;
     PyArrayObject* array_subcols = NULL;
     intptr_t *subrows = NULL;
@@ -125,7 +125,7 @@ linear_sum_assignment(PyObject* self, PyObject* args, PyObject* kwargs)
         goto cleanup;
     }
 
-    if (obj_subrows != NULL && obj_subrows != Py_None) {
+    if (obj_subrows != Py_None) {
         array_subrows = (PyArrayObject*)PyArray_ContiguousFromAny(obj_subrows, NPY_INTP, 0, 0);
         if (!array_subrows) {
             return NULL;
@@ -143,7 +143,7 @@ linear_sum_assignment(PyObject* self, PyObject* args, PyObject* kwargs)
         }
         n_subrows = PyArray_DIM(array_subrows, 0);
     }
-    if (obj_subcols != NULL && obj_subcols != Py_None) {
+    if (obj_subcols != Py_None) {
         array_subcols = (PyArrayObject*)PyArray_ContiguousFromAny(obj_subcols, NPY_INTP, 0, 0);
         if (!array_subcols) {
             return NULL;
