@@ -194,6 +194,11 @@ linear_sum_assignment(PyObject* self, PyObject* args, PyObject* kwargs)
                         "subrows or subcols is invalid");
         goto cleanup;
     }
+    else if (ret == RECTANGULAR_LSAP_DTYPE_INVALID) {
+        PyErr_SetString(PyExc_ValueError,
+                        "dtype is invalid");
+        goto cleanup;
+    }
 
     result = Py_BuildValue("OO", a, b);
 
