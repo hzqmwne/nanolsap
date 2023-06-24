@@ -1,3 +1,4 @@
+import os
 import numpy
 import platform
 
@@ -24,6 +25,9 @@ if platform.python_implementation() == "CPython":
         cmdclass = {"bdist_wheel": bdist_wheel}
 else:
     cmdclass = {}
+
+os.environ["CXXFLAGS"] = "-std=c++11"
+os.environ["LDFLAGS"] = "-s"
 setup_args = dict(
     ext_modules=[
         Extension(
