@@ -28,7 +28,10 @@ dynamic = ["version"]
 where = ["src"]
 
 [tool.setuptools.package-data]
-nanolsap = ["py.typed"]
+"*" = ["py.typed"]
+
+[tool.setuptools.exclude-package-data]
+"*" = ["*.c", "*.cpp", "*.h"]
 
 [tool.setuptools_scm]
 
