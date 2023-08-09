@@ -34,6 +34,7 @@ where = ["src"]
 "*" = ["*.c", "*.cpp", "*.h"]
 
 [tool.setuptools_scm]
+write_to = "src/nanolsap/_version.py"
 
 [tool.cibuildwheel]
 build = "cp37-*"
